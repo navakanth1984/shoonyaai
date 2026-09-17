@@ -187,12 +187,12 @@ export const EngineerModule: React.FC<EngineerModuleProps> = ({
           </div>
 
           {/* Action Controls (Guarded by RBAC) */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {currentRole.canDeployPipelines ? (
               <>
                 <button
                   onClick={() => setIsStreaming(!isStreaming)}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer w-full sm:w-auto min-h-[42px] ${
                     isStreaming
                       ? 'bg-amber-500 hover:bg-amber-600 text-white'
                       : 'bg-emerald-600 hover:bg-emerald-500 text-white'
@@ -200,12 +200,12 @@ export const EngineerModule: React.FC<EngineerModuleProps> = ({
                 >
                   {isStreaming ? (
                     <>
-                      <Pause className="w-4 h-4 fill-current" />
+                      <Pause className="w-4 h-4 fill-current shrink-0" />
                       <span>Pause Ingestion</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4 fill-current" />
+                      <Play className="w-4 h-4 fill-current shrink-0" />
                       <span>Resume Stream</span>
                     </>
                   )}
@@ -214,18 +214,43 @@ export const EngineerModule: React.FC<EngineerModuleProps> = ({
                 <button
                   onClick={handleInjectSchemaDrift}
                   disabled={schemaDriftActive}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors disabled:opacity-50 cursor-pointer w-full sm:w-auto min-h-[42px]"
                   title="Simulate upstream producer adding unmapped JSON keys"
                 >
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>Simulate Schema Drift</span>
                 </button>
               </>
             ) : (
-              <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700">
+              <span className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 w-full sm:w-auto text-center">
                 Streaming controls restricted for {currentRole.label}
               </span>
             )}
+          </div>
+        </div>
+
+        {/* Active Pipeline Card (Properly wrapped for mobile viewports) */}
+        <div className="mt-4 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Active Ingestion Pipeline:
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                {isStreaming ? '● Ingesting' : '❚❚ Paused'}
+              </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                Partition: {pipeline.partitionStrategy.split(',')[0]}
+              </span>
+            </div>
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white break-words text-wrap">
+              {pipeline.name}
+            </h3>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <span className="font-mono text-cyan-600 dark:text-cyan-400 text-[11px] break-all">{pipeline.source}</span>
+              <span className="text-slate-400">→</span>
+              <span className="font-mono text-indigo-600 dark:text-indigo-400 text-[11px] break-all">{pipeline.destination}</span>
+            </div>
           </div>
         </div>
 

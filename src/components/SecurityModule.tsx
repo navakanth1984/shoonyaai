@@ -20,17 +20,20 @@ import { ROLE_PERMISSIONS, INITIAL_PII_POLICIES } from '../mockData';
 interface SecurityModuleProps {
   activeRole: UserRole;
   onTriggerAuditLog: (action: string, target: string, status: 'ALLOWED' | 'BLOCKED' | 'SUCCESS' | 'WARNING') => void;
+  onOpenSecurityAudit?: () => void;
 }
 
 export const SecurityModule: React.FC<SecurityModuleProps> = ({ 
   activeRole, 
-  onTriggerAuditLog 
+  onTriggerAuditLog,
+  onOpenSecurityAudit
 }) => {
   const currentRole = ROLE_PERMISSIONS[activeRole];
   const [policies, setPolicies] = useState<PIIMaskingPolicy[]>(INITIAL_PII_POLICIES);
   const [isScanning, setIsScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'policies' | 'rbac' | 'compliance'>('policies');
+  const [permissionError, setPermissionError] = useState<string | null>(null);
 
   const handleRunAiScan = async () => {
     setIsScanning(true);
@@ -59,7 +62,7 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({
   const handleTogglePolicy = (id: string) => {
     if (!currentRole.canAccessSecurityPolicies) {
       onTriggerAuditLog('UNAUTHORIZED_POLICY_EDIT_ATTEMPT', `Policy ID: ${id}`, 'BLOCKED');
-      alert(`Permission Denied: Your current role [${currentRole.label}] cannot modify security masking policies.`);
+      setPermissionError(`Permission Denied: Current role [${currentRole.label}] cannot modify security masking policies.`);
       return;
     }
 
@@ -76,7 +79,7 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({
   const handleChangeMaskType = (id: string, newType: PIIMaskingPolicy['maskingType']) => {
     if (!currentRole.canAccessSecurityPolicies) {
       onTriggerAuditLog('UNAUTHORIZED_POLICY_EDIT_ATTEMPT', `Policy ID: ${id}`, 'BLOCKED');
-      alert(`Permission Denied: Your current role [${currentRole.label}] cannot modify security masking policies.`);
+      setPermissionError(`Permission Denied: Current role [${currentRole.label}] cannot modify security masking policies.`);
       return;
     }
 
@@ -91,6 +94,22 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Permission Warning Toast / Banner */}
+      {permissionError && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="w-4 h-4 text-rose-400 shrink-0" />
+            <span className="font-semibold">{permissionError}</span>
+          </div>
+          <button 
+            onClick={() => setPermissionError(null)}
+            className="text-xs px-2.5 py-1 rounded bg-rose-950/60 hover:bg-rose-900/60 text-rose-200 border border-rose-800/60 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -109,7 +128,18 @@ export const SecurityModule: React.FC<SecurityModuleProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenSecurityAudit && (
+              <button
+                onClick={onOpenSecurityAudit}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-950/70 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                title="Verify zero client API key leaks and system penetration defenses"
+              >
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>API Key Breach Audit</span>
+              </button>
+            )}
+
             <button
               onClick={handleRunAiScan}
               disabled={isScanning}

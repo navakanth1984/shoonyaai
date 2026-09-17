@@ -6,6 +6,34 @@ export type UserRole =
   | 'security_officer' 
   | 'viewer';
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  avatar?: string;
+  loginMethod: 'google' | 'mobile_otp' | 'enterprise_email' | 'saml_sso' | 'passkey_webauthn';
+  role: UserRole;
+  token: string;
+  authenticatedAt: string;
+  verified: boolean;
+  mfaVerified?: boolean;
+  sessionDurationMinutes?: number;
+  ipAddress?: string;
+  complianceAttested?: boolean;
+  organization?: string;
+}
+
+export interface SecurityAuditItem {
+  id: string;
+  category: 'API_KEYS' | 'NETWORK' | 'PII_MASKING' | 'AUTH_TOKENS' | 'INJECTION_PREVENTION' | 'FIREBASE_ZERO_TRUST';
+  title: string;
+  status: 'PASSED' | 'SECURE' | 'VERIFIED';
+  description: string;
+  mitigation: string;
+  riskScore: 'ZERO' | 'LOW';
+}
+
 export interface RolePermission {
   role: UserRole;
   label: string;
@@ -56,6 +84,21 @@ export interface Pipeline {
   dbtSqlSpec: string;
   mlOptimizationNotes: string[];
   lastRunTime: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PipelineTelemetryPoint {
+  timestamp: string;
+  timeIso: string;
+  latencyMs: number;
+  p95LatencyMs: number;
+  p99LatencyMs: number;
+  errorRate: number; // in percent (e.g. 0.08)
+  requestsPerSec: number;
+  slaLimitMs: number;
+  isBreach: boolean;
+  incidentNote?: string;
 }
 
 export type WarehouseType = 'snowflake' | 'bigquery' | 'redshift' | 'databricks' | 'postgres';
@@ -307,4 +350,83 @@ export interface AIQueryHistoryItem {
   promptMode: AIQueryPromptMode;
   chartType: string;
   rowCount: number;
+}
+
+export interface SqlColumnDef {
+  name: string;
+  type: 'string' | 'number' | 'timestamp' | 'boolean' | 'json';
+  nullable?: boolean;
+}
+
+export interface WarehouseTableMeta {
+  name: string;
+  schema: string;
+  warehouse: WarehouseType;
+  rowCount: number;
+  sizeGb: number;
+  description: string;
+  columns: Array<{
+    name: string;
+    type: 'string' | 'number' | 'timestamp' | 'boolean' | 'json';
+    isPrimaryKey?: boolean;
+    isClusterKey?: boolean;
+  }>;
+}
+
+export interface SqlQueryExecutionResult {
+  queryId: string;
+  sql: string;
+  warehouse: WarehouseType;
+  columns: SqlColumnDef[];
+  rows: Record<string, any>[];
+  rowCount: number;
+  executionTimeMs: number;
+  bytesScanned: string;
+  warehouseCluster: string;
+  costUsd: number;
+  cacheHit: boolean;
+  executedAt: string;
+  explainPlan?: Array<{
+    step: number;
+    operation: string;
+    details: string;
+    costPct: number;
+  }>;
+}
+
+export interface SqlQueryHistoryEntry {
+  id: string;
+  sql: string;
+  warehouse: WarehouseType;
+  status: 'success' | 'error';
+  rowCount?: number;
+  executionTimeMs?: number;
+  timestamp: string;
+  errorMessage?: string;
+}
+
+export type VoiceMemoCategory = 
+  | 'Partitioning' 
+  | 'FinOps & Cost' 
+  | 'SLA & Latency' 
+  | 'Security & PII' 
+  | 'Scale & Topology' 
+  | 'Governance' 
+  | 'General';
+
+export interface ArchitecturalVoiceMemo {
+  id: string;
+  title: string;
+  category: VoiceMemoCategory;
+  pipelineId?: string;
+  pipelineName?: string;
+  audioUrl: string; // Base64 data URI or Object URL
+  durationSeconds: number;
+  recordedAt: string;
+  architectName: string;
+  architectRole: UserRole;
+  transcript: string;
+  keyDecisions: string[];
+  audioFormat?: string;
+  fileSizeBytes?: number;
 }

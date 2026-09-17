@@ -31,6 +31,7 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
   const [warehouses, setWarehouses] = useState<WarehouseConnection[]>(INITIAL_WAREHOUSES);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const [newWh, setNewWh] = useState({
     name: '',
     type: 'snowflake',
@@ -57,7 +58,7 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
   const handleAddWarehouse = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentRole.canManageWarehouses) {
-      alert(`Permission Denied: Current role [${currentRole.label}] cannot provision new warehouse connections.`);
+      setPermissionError(`Permission Denied: Current role [${currentRole.label}] cannot provision new warehouse connections.`);
       return;
     }
 
@@ -83,6 +84,22 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Permission Warning Toast / Banner */}
+      {permissionError && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+            <span className="font-semibold">{permissionError}</span>
+          </div>
+          <button 
+            onClick={() => setPermissionError(null)}
+            className="text-xs px-2.5 py-1 rounded bg-rose-950/60 hover:bg-rose-900/60 text-rose-200 border border-rose-800/60 cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

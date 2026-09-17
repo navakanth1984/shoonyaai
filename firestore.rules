@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read, write: if true;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (isOwner(userId) || request.auth.token.role == 'admin');
+      allow delete: if isSignedIn() && request.auth.token.role == 'admin';
+    }
+
+    // Data Pipelines
+    match /pipelines/{pipelineId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Immutable Audit Logs (Append-only)
+    match /audit_logs/{logId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false; // Strict append-only tamper protection
+    }
+
+    // Architectural Voice Memos & Decision Logs
+    match /voice_memos/{memoId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+
+    // Security Incidents
+    match /incidents/{incidentId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isSignedIn() && request.auth.token.role == 'admin';
+    }
+  }
+}

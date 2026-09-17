@@ -31,7 +31,10 @@ import {
   CheckCircle2,
   HelpCircle,
   Zap,
-  DollarSign
+  DollarSign,
+  Boxes,
+  FileCode,
+  BookOpen
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -60,6 +63,8 @@ import {
   UserRole 
 } from '../types';
 import { EmbedVisualizationModal } from './EmbedVisualizationModal';
+import { Spatial3DVisualization } from './Spatial3DVisualization';
+import { generatePolyglotSnippets } from '../utils/polyglotCodeGenerators';
 
 interface AIQueryAssistantProps {
   activeRole?: UserRole;
@@ -128,8 +133,12 @@ export const AIQueryAssistant: React.FC<AIQueryAssistantProps> = ({ activeRole }
   const [promptMode, setPromptMode] = useState<AIQueryPromptMode>('standard');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
-  const [activeTab, setActiveTab] = useState<'preview' | 'results_table' | 'sql_editor' | 'prompt_inspection'>('preview');
+  const [activeTab, setActiveTab] = useState<'preview' | 'spatial_3d' | 'polyglot' | 'results_table' | 'sql_editor' | 'prompt_inspection'>('preview');
   const [chartTypeOverride, setChartTypeOverride] = useState<'bar' | 'line' | 'area' | 'pie' | 'scatter' | null>(null);
+
+  // Polyglot language selection & copy state
+  const [polyglotLang, setPolyglotLang] = useState<'pyspark' | 'spark_scala' | 'java_spark' | 'spark_sql' | 'python_polars' | 'react_vite' | 'html5_standalone'>('pyspark');
+  const [copiedPolyglot, setCopiedPolyglot] = useState<string | null>(null);
 
   // In-table search and filtering
   const [tableSearch, setTableSearch] = useState('');
@@ -223,6 +232,18 @@ ORDER BY 3 DESC;`,
   });
 
   const effectiveChartType = chartTypeOverride || queryResult.chartType;
+
+  // Generate Polyglot Code Snippets across Spark, Scala, Java, Python, SQL, React, HTML
+  const polyglotSnippets = useMemo(() => {
+    return generatePolyglotSnippets({
+      title: queryResult.title,
+      sql: queryResult.sql,
+      data: queryResult.data,
+      xAxisKey: queryResult.xAxisKey,
+      metrics: queryResult.metrics,
+      warehouseType: queryResult.warehouseType
+    });
+  }, [queryResult]);
 
   // Execute Natural Language Query with Prompt Approach
   const handleExecuteNLQ = async (queryText?: string, modeOverride?: AIQueryPromptMode) => {
@@ -418,7 +439,7 @@ ORDER BY 3 DESC;`,
             <span className="text-[11px] text-slate-500">Tailors query optimization, join depth, and analytics focus</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-2">
             {PROMPT_STRATEGIES.map((strat) => {
               const Icon = strat.icon;
               const isSelected = promptMode === strat.id;
@@ -429,14 +450,14 @@ ORDER BY 3 DESC;`,
                     setPromptMode(strat.id);
                     handleExecuteNLQ(question, strat.id);
                   }}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[64px] ${
                     isSelected
                       ? 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-500 dark:border-indigo-500/80 text-indigo-950 dark:text-indigo-200 shadow-xs'
                       : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <Icon className={`w-4 h-4 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                    <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
                     <span className="text-xs font-bold truncate">{strat.label}</span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-tight">
@@ -450,24 +471,24 @@ ORDER BY 3 DESC;`,
       </div>
 
       {/* Interactive Natural Language Prompt Engine Bar */}
-      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-2xl border border-indigo-900/60 p-5 text-white shadow-xl space-y-4">
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-2xl border border-indigo-900/60 p-4 sm:p-5 text-white shadow-xl space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400">
+            <span className="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-400 shrink-0">
               <Terminal className="w-4 h-4" />
             </span>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-300">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-300 truncate">
               Natural Language Prompt & Query Engine
             </h3>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">
               Gemini 3.8 Flash
             </span>
           </div>
         </div>
 
-        {/* Input Bar */}
+        {/* Input Bar with Thumb Friendly Sizing */}
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
@@ -476,23 +497,23 @@ ORDER BY 3 DESC;`,
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="e.g. Compare compute cost vs event throughput across all warehouse clusters..."
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-cyan-400"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-cyan-400 min-h-[46px]"
               onKeyDown={(e) => e.key === 'Enter' && handleExecuteNLQ()}
             />
           </div>
           <button
             onClick={() => handleExecuteNLQ()}
             disabled={isLoading || !question.trim()}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all disabled:opacity-50 cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all disabled:opacity-50 cursor-pointer shrink-0 w-full sm:w-auto min-h-[46px]"
           >
             {isLoading ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
                 <span>Synthesizing SQL & Preview...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 shrink-0" />
                 <span>Ask Query Assistant</span>
               </>
             )}
@@ -501,11 +522,11 @@ ORDER BY 3 DESC;`,
 
         {/* Curated Prompt Categories & Quick Chips */}
         <div className="space-y-2 pt-1 border-t border-slate-800/80">
-          <div className="flex items-center justify-between text-[11px] text-slate-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-400 gap-1">
             <span className="font-semibold">Curated Prompts by Analytical Category:</span>
-            <span className="text-[10px] text-slate-500">Click any prompt to compile SQL & auto-format chart</span>
+            <span className="text-[10px] text-slate-500">Tap any prompt to compile SQL & auto-format chart</span>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
             {CURATED_PROMPT_CATEGORIES.flatMap(c => c.questions).slice(0, 4).map((q, idx) => (
               <button
                 key={idx}
@@ -513,7 +534,7 @@ ORDER BY 3 DESC;`,
                   setQuestion(q);
                   handleExecuteNLQ(q);
                 }}
-                className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/70 hover:border-cyan-500/50 transition-all cursor-pointer truncate max-w-xs sm:max-w-md text-left"
+                className="text-xs px-3 py-2 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700/70 hover:border-cyan-500/50 transition-all cursor-pointer min-h-[38px] flex items-center text-left max-w-full break-words"
               >
                 &ldquo;{q}&rdquo;
               </button>
@@ -545,14 +566,14 @@ ORDER BY 3 DESC;`,
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
               {/* Chart Type Overrides */}
               {activeTab === 'preview' && (
                 <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
                   <button
                     onClick={() => setChartTypeOverride('bar')}
                     title="Bar Chart"
-                    className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                       effectiveChartType === 'bar' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -561,7 +582,7 @@ ORDER BY 3 DESC;`,
                   <button
                     onClick={() => setChartTypeOverride('line')}
                     title="Line Chart"
-                    className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                       effectiveChartType === 'line' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -570,7 +591,7 @@ ORDER BY 3 DESC;`,
                   <button
                     onClick={() => setChartTypeOverride('area')}
                     title="Area Chart"
-                    className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                       effectiveChartType === 'area' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -579,7 +600,7 @@ ORDER BY 3 DESC;`,
                   <button
                     onClick={() => setChartTypeOverride('pie')}
                     title="Pie / Donut Chart"
-                    className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                       effectiveChartType === 'pie' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -588,7 +609,7 @@ ORDER BY 3 DESC;`,
                   <button
                     onClick={() => setChartTypeOverride('scatter')}
                     title="Scatter Correlation Plot"
-                    className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                    className={`p-2 min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                       effectiveChartType === 'scatter' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
@@ -597,11 +618,11 @@ ORDER BY 3 DESC;`,
                 </div>
               )}
 
-              {/* View Switcher Tabs */}
-              <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs">
+              {/* View Switcher Tabs - Thumb scrollable */}
+              <div className="flex items-center bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-x-auto max-w-full no-scrollbar">
                 <button
                   onClick={() => setActiveTab('preview')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] ${
                     activeTab === 'preview'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -610,8 +631,30 @@ ORDER BY 3 DESC;`,
                   Visualization Preview
                 </button>
                 <button
+                  onClick={() => setActiveTab('spatial_3d')}
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] flex items-center gap-1.5 ${
+                    activeTab === 'spatial_3d'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Boxes className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>3D Spatial View</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('polyglot')}
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] flex items-center gap-1.5 ${
+                    activeTab === 'polyglot'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <Terminal className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Polyglot Code Engine</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('results_table')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] ${
                     activeTab === 'results_table'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -621,7 +664,7 @@ ORDER BY 3 DESC;`,
                 </button>
                 <button
                   onClick={() => setActiveTab('sql_editor')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] ${
                     activeTab === 'sql_editor'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -631,7 +674,7 @@ ORDER BY 3 DESC;`,
                 </button>
                 <button
                   onClick={() => setActiveTab('prompt_inspection')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  className={`px-3 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap min-h-[38px] ${
                     activeTab === 'prompt_inspection'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -644,7 +687,7 @@ ORDER BY 3 DESC;`,
               {/* Embed & Share Action */}
               <button
                 onClick={() => setIsEmbedModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer min-h-[38px] w-full sm:w-auto"
               >
                 <Share2 className="w-3.5 h-3.5" />
                 <span>Embed Chart</span>
@@ -893,28 +936,197 @@ ORDER BY 3 DESC;`,
             </div>
           )}
 
+          {/* Tab: 3D Spatial Visualization */}
+          {activeTab === 'spatial_3d' && (
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Boxes className="w-4 h-4 text-cyan-500" />
+                    <span>3D Spatial Telemetry & Coordinates</span>
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Interactive WebGL Three.js spatial canvas rendering query clusters in 3D coordinate space.
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300 w-fit">
+                  Three.js WebGL &bull; Orbit Controls Active
+                </span>
+              </div>
+
+              <Spatial3DVisualization 
+                data={queryResult.data} 
+                title={`${queryResult.title} - 3D Spatial View`} 
+                onNodeSelect={(node) => setSelectedEntity(node)}
+              />
+
+              {/* Spatial Coordinate Dimension HUD */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-cyan-500 block mb-0.5">X-Axis Spatial Dimension</span>
+                  <div className="font-bold text-slate-900 dark:text-white">Throughput & Partition Buckets</div>
+                  <span className="text-[11px] text-slate-500">Distributed across stream shards</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-indigo-500 block mb-0.5">Y-Axis Spatial Dimension</span>
+                  <div className="font-bold text-slate-900 dark:text-white">Compute Latency & Processing Elevation</div>
+                  <span className="text-[11px] text-slate-500">Vertical node displacement</span>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-emerald-500 block mb-0.5">Z-Axis Spatial Dimension</span>
+                  <div className="font-bold text-slate-900 dark:text-white">Warehouse Credits & Ingestion Depth</div>
+                  <span className="text-[11px] text-slate-500">Volumetric cluster sphere radius</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Polyglot Multi-Language Code Engine */}
+          {activeTab === 'polyglot' && polyglotSnippets && (
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-amber-500" />
+                    <span>Polyglot Pipeline & Visualization Code</span>
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Production code ready for execution across Spark, Scala, Java, Python, SQL, and React/HTML5.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    const snippet = polyglotSnippets[polyglotLang];
+                    if (snippet) {
+                      navigator.clipboard.writeText(snippet.code);
+                      setCopiedPolyglot(polyglotLang);
+                      setTimeout(() => setCopiedPolyglot(null), 2000);
+                    }
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer min-h-[38px] w-full sm:w-auto"
+                >
+                  {copiedPolyglot === polyglotLang ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-300" />
+                      <span>Copied {polyglotSnippets[polyglotLang]?.language}!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>Copy {polyglotSnippets[polyglotLang]?.language}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Language Selector Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 border-b border-slate-200 dark:border-slate-800">
+                {[
+                  { id: 'pyspark', label: 'PySpark (Python)', icon: Terminal, color: 'text-amber-400' },
+                  { id: 'spark_scala', label: 'Spark Scala', icon: Cpu, color: 'text-red-400' },
+                  { id: 'java_spark', label: 'Java Spark', icon: FileCode, color: 'text-orange-400' },
+                  { id: 'spark_sql', label: 'Spark SQL', icon: Code2, color: 'text-cyan-400' },
+                  { id: 'python_polars', label: 'DuckDB & Polars', icon: Terminal, color: 'text-emerald-400' },
+                  { id: 'react_vite', label: 'React 19 + Vite', icon: Sparkles, color: 'text-indigo-400' },
+                  { id: 'html5_standalone', label: 'HTML5 Standalone 3D', icon: Boxes, color: 'text-cyan-400' },
+                ].map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setPolyglotLang(item.id as any)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap min-h-[38px] cursor-pointer shrink-0 flex items-center gap-1.5 ${
+                        polyglotLang === item.id
+                          ? 'bg-indigo-600 text-white shadow-xs'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${item.color}`} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Active Language Metadata & Execution Guide */}
+              {polyglotSnippets[polyglotLang] && (
+                <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white text-xs">{polyglotSnippets[polyglotLang].language}</span>
+                      <span className="text-cyan-400 font-mono text-[11px]">({polyglotSnippets[polyglotLang].dialect})</span>
+                    </div>
+                    <p className="text-slate-400 text-[11px] mt-0.5">{polyglotSnippets[polyglotLang].executionInstructions}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {polyglotSnippets[polyglotLang].libraries.map((lib, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded bg-slate-900 text-indigo-400 font-mono text-[10px] border border-slate-800">
+                        {lib}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Code Container */}
+              <div className="rounded-xl bg-slate-950 p-4 font-mono text-xs text-cyan-300 border border-slate-800 max-h-80 overflow-y-auto overflow-x-auto shadow-inner">
+                <pre className="whitespace-pre leading-relaxed text-[11px]">
+                  {polyglotSnippets[polyglotLang]?.code}
+                </pre>
+              </div>
+
+              {/* Manifest Box if available (e.g. requirements.txt / build.sbt / pom.xml) */}
+              {polyglotSnippets[polyglotLang]?.manifestFile && (
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Build Manifest: {polyglotSnippets[polyglotLang].manifestFile!.filename}</span>
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(polyglotSnippets[polyglotLang].manifestFile!.content);
+                        setCopiedPolyglot('manifest');
+                        setTimeout(() => setCopiedPolyglot(null), 2000);
+                      }}
+                      className="text-xs text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer"
+                    >
+                      {copiedPolyglot === 'manifest' ? 'Copied Manifest!' : 'Copy File'}
+                    </button>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-950 text-slate-300 font-mono text-[11px] overflow-x-auto">
+                    <pre className="whitespace-pre">{polyglotSnippets[polyglotLang].manifestFile!.content}</pre>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tab 2: Results Table */}
           {activeTab === 'results_table' && (
-            <div className="p-5 sm:p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search result rows..."
-                    value={tableSearch}
-                    onChange={(e) => setTableSearch(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs w-48 text-slate-800 dark:text-slate-200"
-                  />
-                  <span className="text-xs text-slate-400">
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col xs:flex-row xs:items-center gap-2 w-full sm:w-auto">
+                  <div className="relative flex-1 xs:w-60">
+                    <Filter className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search result rows..."
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs text-slate-800 dark:text-slate-200 min-h-[38px]"
+                    />
+                  </div>
+                  <span className="text-xs text-slate-400 shrink-0">
                     Showing {processedTableData.length} of {queryResult.data?.length || 0} rows
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleExportCsv}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer"
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-colors cursor-pointer w-full sm:w-auto min-h-[38px]"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Export CSV</span>

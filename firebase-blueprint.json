@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role-based access control and security governance details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["architect", "admin", "engineer", "analyst", "security", "viewer"] },
+        "loginMethod": { "type": "string" },
+        "authenticatedAt": { "type": "string" },
+        "mfaVerified": { "type": "boolean" },
+        "organization": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "role", "loginMethod", "authenticatedAt"]
+    },
+    "Pipeline": {
+      "title": "Pipeline",
+      "description": "Data ETL pipeline with DAG nodes, configuration, throughput, and status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "source": { "type": "string" },
+        "destination": { "type": "string" },
+        "status": { "type": "string", "enum": ["running", "paused", "failed", "draft"] },
+        "ingestionMode": { "type": "string", "enum": ["streaming", "micro-batch", "batch"] },
+        "latencyTolerance": { "type": "string" },
+        "throughput": { "type": "string" },
+        "recordsProcessed": { "type": "number" },
+        "nodes": { "type": "array" },
+        "edges": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["id", "name", "source", "destination", "status", "ingestionMode"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and operational audit trail records.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "action": { "type": "string" },
+        "actor": { "type": "string" },
+        "target": { "type": "string" },
+        "status": { "type": "string", "enum": ["ALLOWED", "BLOCKED", "SUCCESS", "WARNING"] },
+        "ipAddress": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "metadata": { "type": "object" }
+      },
+      "required": ["id", "action", "actor", "target", "status", "timestamp"]
+    },
+    "SecurityIncident": {
+      "title": "SecurityIncident",
+      "description": "Zero-trust governance alerts and anomaly incidents.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "severity": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+        "category": { "type": "string" },
+        "detectedAt": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "INVESTIGATING", "RESOLVED"] },
+        "details": { "type": "string" },
+        "remediation": { "type": "string" }
+      },
+      "required": ["id", "title", "severity", "category", "detectedAt", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Authenticated user profiles with RBAC assignments."
+    },
+    "/pipelines/{pipelineId}": {
+      "schema": "Pipeline",
+      "description": "Data pipelines and DAG execution topologies."
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Tamper-resistant operational and access audit records."
+    },
+    "/incidents/{incidentId}": {
+      "schema": "SecurityIncident",
+      "description": "Security anomalies, PII leaks, and compliance incidents."
+    }
+  }
+}

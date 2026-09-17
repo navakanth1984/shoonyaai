@@ -1,7 +1,7 @@
 {
   "name": "ShoonyaAI - AI Native ETL & Analytics",
   "description": "Enterprise AI-native ETL and real-time analytics platform with AI Architect, Engineer, Analyst, Security Governance, and Admin modules, streaming ingestion, NLQ, cloud warehouse sync, RBAC, and automated reporting.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
 

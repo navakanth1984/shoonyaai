@@ -32,7 +32,7 @@ export const DataQualityScannerView: React.FC<DataQualityScannerViewProps> = ({ 
   const [appliedMessage, setAppliedMessage] = useState<string | null>(null);
   const [filterIssueType, setFilterIssueType] = useState<string>('all');
 
-  const currentScan = scanResults['mdl-01'] || Object.values(scanResults)[0];
+  const currentScan = scanResults['mdl-01'] || Object.values(scanResults)?.[0] || null;
 
   const handleScanSampleData = async () => {
     setIsScanning(true);
@@ -45,7 +45,7 @@ export const DataQualityScannerView: React.FC<DataQualityScannerViewProps> = ({ 
         body: JSON.stringify({
           table: selectedTable,
           warehouse: selectedWarehouse,
-          sampleRows: currentScan.sampleDataPreview
+          sampleRows: currentScan?.sampleDataPreview || []
         }),
       });
 
@@ -140,7 +140,7 @@ export const DataQualityScannerView: React.FC<DataQualityScannerViewProps> = ({ 
               >
                 {INITIAL_WAREHOUSE_MODELS.map(m => (
                   <option key={m.id} value={m.name}>
-                    {m.name} ({m.warehouse.split(' ')[0]})
+                    {m.name} ({m.warehouse ? m.warehouse.split(' ')[0] : ''})
                   </option>
                 ))}
               </select>

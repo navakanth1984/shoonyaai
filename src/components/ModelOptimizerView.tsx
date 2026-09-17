@@ -26,14 +26,14 @@ interface ModelOptimizerViewProps {
 
 export const ModelOptimizerView: React.FC<ModelOptimizerViewProps> = ({ onApplyOptimization }) => {
   const [models, setModels] = useState<WarehouseModelInfo[]>(INITIAL_WAREHOUSE_MODELS);
-  const [selectedModelId, setSelectedModelId] = useState<string>(models[0].id);
+  const [selectedModelId, setSelectedModelId] = useState<string>(models?.[0]?.id || '');
   const [analyses, setAnalyses] = useState<Record<string, ModelOptimizationAnalysis>>(SAMPLE_MODEL_OPTIMIZATIONS);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [copiedSql, setCopiedSql] = useState<string | null>(null);
   const [appliedSuccess, setAppliedSuccess] = useState<string | null>(null);
 
-  const selectedModel = models.find(m => m.id === selectedModelId) || models[0];
-  const currentAnalysis = analyses[selectedModel.id] || null;
+  const selectedModel = (models && models.find(m => m.id === selectedModelId)) || models?.[0];
+  const currentAnalysis = (selectedModel && analyses[selectedModel.id]) || null;
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
@@ -136,7 +136,7 @@ export const ModelOptimizerView: React.FC<ModelOptimizerViewProps> = ({ onApplyO
               >
                 {models.map(m => (
                   <option key={m.id} value={m.id}>
-                    {m.name} ({m.warehouse.split(' ')[0]})
+                    {m.name} ({m.warehouse ? m.warehouse.split(' ')[0] : ''})
                   </option>
                 ))}
               </select>

@@ -24,7 +24,9 @@ import {
   Eye,
   Info,
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Activity,
+  Terminal
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -46,19 +48,32 @@ import {
   Legend, 
   CartesianGrid 
 } from 'recharts';
-import { UserRole, EmbeddedVisualization } from '../types';
+import { UserRole, EmbeddedVisualization, Pipeline } from '../types';
 import { INITIAL_EMBEDDED_VISUALIZATIONS } from '../mockData';
 import { EmbedVisualizationModal } from './EmbedVisualizationModal';
 import { AIQueryAssistant } from './AIQueryAssistant';
+import { PipelineTelemetryChart } from './PipelineTelemetryChart';
+import { SqlQueryEditor } from './SqlQueryEditor';
 
 interface AnalystModuleProps {
   activeRole: UserRole;
+  pipelines?: Pipeline[];
+  activePipelineId?: string;
+  setActivePipelineId?: (id: string) => void;
+  isStreaming?: boolean;
 }
 
 const PIE_COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
 
-export const AnalystModule: React.FC<AnalystModuleProps> = ({ activeRole }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'assistant' | 'catalog'>('assistant');
+export const AnalystModule: React.FC<AnalystModuleProps> = ({ 
+  activeRole,
+  pipelines,
+  activePipelineId,
+  setActivePipelineId,
+  isStreaming = true
+}) => {
+  const [activeSubTab, setActiveSubTab] = useState<'telemetry' | 'sql' | 'assistant' | 'catalog'>('telemetry');
+  const [editorInitialSql, setEditorInitialSql] = useState<string | undefined>(undefined);
   const [question, setQuestion] = useState('Compare compute cost vs event throughput across all warehouse clusters');
   const [warehouseType, setWarehouseType] = useState('snowflake');
   const [isLoading, setIsLoading] = useState(false);
@@ -231,36 +246,74 @@ ORDER BY 3 DESC;`,
   return (
     <div className="space-y-6">
       {/* Sub-Navigation Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full sm:w-auto">
           <button
+            id="tab-analyst-telemetry"
+            onClick={() => setActiveSubTab('telemetry')}
+            className={`flex items-center justify-center sm:justify-start gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] cursor-pointer ${
+              activeSubTab === 'telemetry'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Activity className="w-4 h-4 shrink-0" />
+            <span className="truncate">Pipeline Telemetry</span>
+            <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+              activeSubTab === 'telemetry' ? 'bg-indigo-700/80 text-white' : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+            }`}>
+              Real-time
+            </span>
+          </button>
+
+          <button
+            id="tab-analyst-sql"
+            onClick={() => setActiveSubTab('sql')}
+            className={`flex items-center justify-center sm:justify-start gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] cursor-pointer ${
+              activeSubTab === 'sql'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Terminal className="w-4 h-4 shrink-0" />
+            <span className="truncate">SQL Query Editor</span>
+            <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+              activeSubTab === 'sql' ? 'bg-indigo-700/80 text-white' : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+            }`}>
+              Live Synced
+            </span>
+          </button>
+
+          <button
+            id="tab-analyst-assistant"
             onClick={() => setActiveSubTab('assistant')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center sm:justify-start gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] cursor-pointer ${
               activeSubTab === 'assistant'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Sparkles className="w-4 h-4" />
-            <span>AI Query Assistant</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              activeSubTab === 'assistant' ? 'bg-indigo-700/80 text-white' : 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span className="truncate">AI Query Assistant</span>
+            <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeSubTab === 'assistant' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
             }`}>
-              Prompt NLQ &bull; SQL
+              NLQ
             </span>
           </button>
 
           <button
+            id="tab-analyst-catalog"
             onClick={() => setActiveSubTab('catalog')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center justify-center sm:justify-start gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] cursor-pointer ${
               activeSubTab === 'catalog'
                 ? 'bg-indigo-600 text-white shadow-xs'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Layers className="w-4 h-4" />
-            <span>Warehouse Charts Catalog</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            <Layers className="w-4 h-4 shrink-0" />
+            <span className="truncate">Warehouse Charts</span>
+            <span className={`hidden sm:inline-block px-1.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
               activeSubTab === 'catalog' ? 'bg-indigo-700/80 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
             }`}>
               {savedVisualizations.length} Saved
@@ -268,14 +321,34 @@ ORDER BY 3 DESC;`,
           </button>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="flex items-center gap-1.5">
-            <Database className="w-3.5 h-3.5 text-indigo-500" />
-            <span className="hidden sm:inline">Active Connectors:</span>
-            <strong>Snowflake, BigQuery, Redshift, Databricks</strong>
+        <div className="flex items-center gap-2 text-xs text-slate-500 justify-between sm:justify-end px-1">
+          <span className="flex items-center gap-1.5 truncate">
+            <Database className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+            <span className="hidden md:inline">Active Connectors:</span>
+            <span className="text-[11px] sm:text-xs">Snowflake, BigQuery, Redshift</span>
           </span>
         </div>
       </div>
+
+      {activeSubTab === 'telemetry' && (
+        <PipelineTelemetryChart
+          pipelines={pipelines}
+          selectedPipelineId={activePipelineId}
+          onSelectPipelineId={setActivePipelineId}
+          isStreamingExternal={isStreaming}
+        />
+      )}
+
+      {activeSubTab === 'sql' && (
+        <SqlQueryEditor
+          initialSql={editorInitialSql}
+          defaultWarehouse={warehouseType as any}
+          onSendToVizAssistant={(querySql) => {
+            setQuestion(querySql);
+            setActiveSubTab('assistant');
+          }}
+        />
+      )}
 
       {activeSubTab === 'assistant' && (
         <AIQueryAssistant activeRole={activeRole} />
@@ -329,31 +402,31 @@ ORDER BY 3 DESC;`,
           <span className="text-[11px] text-slate-400">Powered by Gemini 2.5 Flash</span>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
             <input
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="e.g. Compare compute cost vs event throughput across all warehouse clusters..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-slate-900/90 border border-slate-700 text-xs text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-cyan-500"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:ring-2 focus:ring-cyan-500 min-h-[46px]"
               onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
             />
           </div>
           <button
             onClick={() => handleAsk()}
             disabled={isLoading || !question.trim()}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition-all disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold shadow-md transition-all disabled:opacity-50 cursor-pointer w-full sm:w-auto min-h-[46px] shrink-0"
           >
             {isLoading ? (
               <>
-                <Cpu className="w-4 h-4 animate-spin" />
+                <Cpu className="w-4 h-4 animate-spin shrink-0" />
                 <span>Compiling SQL...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-4 h-4 shrink-0" />
                 <span>Execute NLQ</span>
               </>
             )}
@@ -361,7 +434,7 @@ ORDER BY 3 DESC;`,
         </div>
 
         {/* Quick Chips */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <span className="text-[11px] text-slate-400 font-medium">Try:</span>
           {sampleQuestions.map((sq, i) => (
             <button
@@ -782,14 +855,26 @@ ORDER BY 3 DESC;`,
           {/* View Content: SQL View */}
           {activeView === 'sql' && (
             <div className="relative rounded-lg bg-slate-950 p-4 font-mono text-xs text-cyan-300 border border-slate-800 overflow-x-auto">
-              <button
-                onClick={handleCopySql}
-                className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white text-xs cursor-pointer"
-              >
-                {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSql ? 'Copied' : 'Copy'}</span>
-              </button>
-              <pre className="leading-relaxed">{queryResult.sql}</pre>
+              <div className="absolute top-3 right-3 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setEditorInitialSql(queryResult.sql);
+                    setActiveSubTab('sql');
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-sans font-semibold cursor-pointer shadow-xs"
+                >
+                  <Terminal className="w-3.5 h-3.5" />
+                  <span>Open in SQL Editor</span>
+                </button>
+                <button
+                  onClick={handleCopySql}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 text-slate-300 hover:text-white text-xs font-sans cursor-pointer"
+                >
+                  {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedSql ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+              <pre className="leading-relaxed mt-8 sm:mt-0">{queryResult.sql}</pre>
             </div>
           )}
 
@@ -836,16 +921,30 @@ ORDER BY 3 DESC;`,
                         <ChevronRight className="w-3.5 h-3.5" />
                       </button>
 
-                      <button
-                        onClick={() => {
-                          handleSelectSavedViz(viz);
-                          setIsEmbedModalOpen(true);
-                        }}
-                        className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                      >
-                        <Share2 className="w-3 h-3" />
-                        <span>Embed Code</span>
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditorInitialSql(viz.sqlQuery);
+                            setActiveSubTab('sql');
+                          }}
+                          className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-700/80 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:text-indigo-600 dark:hover:text-indigo-300 text-slate-700 dark:text-slate-300 text-[11px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Open query in SQL editor"
+                        >
+                          <Terminal className="w-3 h-3" />
+                          <span>SQL</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            handleSelectSavedViz(viz);
+                            setIsEmbedModalOpen(true);
+                          }}
+                          className="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-800 dark:text-slate-200 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          <span>Embed Code</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
